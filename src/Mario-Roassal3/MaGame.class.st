@@ -256,3 +256,36 @@ MaGame >> setInput: evt with: status [
 	self pressedKeys at: key put: status.
 	"self pressedKeys traceCr."
 ]
+
+{ #category : #'update cycle' }
+MaGame >> update [
+	| now |
+	now := Time microsecondClockValue.
+	dt := (now - lastTime) / 1000.
+	self handleInput.
+	self updateEntities.
+	self checkCollisions.
+	canvas signalUpdate.
+	lastTime := now.
+]
+
+{ #category : #'update cycle' }
+MaGame >> updateEntities [
+	player update: dt vx: vX.
+	player isDying ifTrue: [ ^ self ].
+	
+	canvas propertyAt: #vx put: vX.
+	
+	"updates the iteration number"
+	hasIter ifTrue: [ 
+		gameIterLabel text: gameIter ; position: (32 @ 16).
+		gameIter := gameIter + 1. 
+	].
+	
+	level updatables do: [ :ent | ent update: dt time: gameTime vx: vX ].
+	player position x > (vX + 5 )
+		ifTrue: [ vX := player position x - 5 ].
+	canvas camera 
+		zoomToFit: canvas extent 
+		rectangle: (Rectangle origin: -9 + (vX * 16@ 0) extent: 16@14 *16)
+]
